@@ -1,0 +1,54 @@
+name: NGA 定时抓取机器人
+
+on:
+  # 1. 定时触发 (这里设置的是 UTC时间 18:00，对应北京时间 凌晨 02:00)
+  schedule:
+    - cron: '0 18 * * *'
+  # 2. 允许手动点击按钮触发 (方便测试)
+  workflow_dispatch:
+
+jobs:
+  scrape-nga-post:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 第一步：拉取代码
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 第二步：配置 Go 语言环境
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21' # 使用较新的 Go 版本
+
+    # 第三步：生成配置文件 (从 Secrets 读取并写入文件)
+    - name: Restore Config
+      run: |
+        echo "${{ secrets.NGA_CONFIG }}" > config.ini
+        # 验证文件是否生成 (出于安全，不打印内容)
+        ls -l config.ini
+
+    # 第四步：编译程序
+    - name: Build
+      run: |
+        go mod download
+        go build -o ngapost2md
+
+    # 第五步：运行抓取 (核心步骤)
+    # 把下面的 6543210 换成你想要抓取的帖子 ID
+    - name: Run Scraper
+      run: |
+        ./ngapost2md 6543210
+      continue-on-error: true # 即使抓取失败(如被墙)也不中断流程，以便查看日志
+
+    # 第六步：上传结果
+    # 抓取完成后，GitHub 会把文件打包供你下载
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nga-backup-files
+        path: |
+          ./*.md
+          ./assets/
+        if-no-files-found: warn
