@@ -39,7 +39,7 @@ jobs:
     # 把下面的 6543210 换成你想要抓取的帖子 ID
     - name: Run Scraper
       run: |
-        ./ngapost2md 6543210
+        ./ngapost2md 45905087
       continue-on-error: true # 即使抓取失败(如被墙)也不中断流程，以便查看日志
 
     # 第六步：上传结果
